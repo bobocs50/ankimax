@@ -6,7 +6,7 @@
 
 ## Phase 2
 - [x] Convert the Electron window to a frameless transparent window.
-- [x] Size the Electron window around the prompt bar instead of a full app shell.df
+- [x] Size the Electron window around the prompt bar instead of a full app shell.dfl
 - [x] Start the window near the top-center of the screen.
 
 ## Phase 3

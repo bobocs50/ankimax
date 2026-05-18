@@ -15,7 +15,7 @@
 
 ## Phase 4
 - [x] Make the bar draggable by using Electron drag regions.
-- [x] Keep the buttons and input interactive with `no-drag` regions.
+- [x] Keep the buttons and input interactive with `no-drag` regions.asdfsadfasdf
 
 ## Phase 5
 - [x] Remove native title bar controls from the visible UI.

@@ -16,7 +16,7 @@ import { IconButton } from '@/components/IconButton';
 const GLASS_LIGHT = 'rgba(80, 70, 90, 0.85)';
 const GLASS_DARK = 'rgba(35, 30, 45, 0.9)';
 
-export default function HomePage() {
+export default function MainWindow() {
   return (
     <main className="h-screen w-screen">
       {/*

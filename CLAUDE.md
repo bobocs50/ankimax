@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Off-limits Files
+
+`notes/STUDY_NOTES.md` is the user's personal learning journal. Do not read, reference, or use it as context for any task.
+
 ## Build and Development Commands
 
 ```bash

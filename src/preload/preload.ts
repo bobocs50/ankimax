@@ -4,7 +4,6 @@ contextBridge.exposeInMainWorld('api', {
 
   //App API
   getVersion: () => ipcRenderer.invoke('app:get-version'),
-  postHelloWorld: () => ipcRenderer.invoke('app:test'),
 
   //Message API
   postMessage: (message: string) => ipcRenderer.invoke('message:post-message', message),

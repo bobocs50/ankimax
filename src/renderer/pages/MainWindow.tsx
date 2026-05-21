@@ -22,7 +22,7 @@ function ControlsBar({ borderTop = false }: { borderTop?: boolean }) {
       style={{ background: GLASS_DARK }}
     >
       <div className="w-20">
-        <IconButton icon={Settings} label="Settings" onClick={() => window.api.postHelloWorld()} />
+        <IconButton icon={Settings} label="Settings" />
       </div>
 
       <div className="flex flex-1 items-center justify-center gap-6">

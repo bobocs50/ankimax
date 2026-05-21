@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Off-limits Files
+## Study Notes
 
-`notes/STUDY_NOTES.md` is the user's personal learning journal. Do not read, reference, or use it as context for any task.
+`notes/STUDY_NOTES.md` is the user's personal learning journal. Claude can read and write to it when the user explicitly asks.
 
 ## Build and Development Commands
 

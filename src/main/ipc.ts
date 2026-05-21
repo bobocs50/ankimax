@@ -7,3 +7,7 @@ ipcMain.handle('app:get-version', () => {
 ipcMain.handle('app:test', () => {
   console.log('Hello World');
 });
+
+ipcMain.handle('message:post-message', (_event, message: string) => {
+  console.log('Message received:', message);
+});

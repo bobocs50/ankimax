@@ -33,3 +33,37 @@ ipcMain.handle('toggle-window', () => toggleWindow());
 
 ---
 
+## #2 — React Event Objects
+
+An event object is what React automatically passes into your event handler. It contains info about what just happened (which key was pressed, what was typed, etc.).
+
+Which type of event object you get depends on which listener you use:
+
+| Listener | Event type | What you use |
+|----------|-----------|--------------|
+| `onChange` | `ChangeEvent` | `e.target.value` — the current text in the input |
+| `onKeyDown` | `KeyboardEvent` | `e.key` — which key was pressed, e.g. `'Enter'` |
+| `onClick` | `MouseEvent` | `e.clientX` — where the mouse clicked |
+
+**Example — typing in a box and pressing Enter to send:**
+
+```tsx
+// 1. User types → onChange fires → e.target.value is the new text
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setMessage(e.target.value);
+};
+
+// 2. User presses a key → onKeyDown fires → e.key tells you which key
+const handleKeyDown = (e: React.KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    sendMessage(); // only send when Enter is pressed
+  }
+};
+
+<input onChange={handleChange} onKeyDown={handleKeyDown} />
+```
+
+Think of it like this: React calls your function and hands you a note (`e`) that says exactly what happened. The note looks different depending on what the user did.
+
+---
+

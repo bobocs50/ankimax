@@ -1,10 +1,20 @@
 import { CornerDownLeft, Settings, Sparkles, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
 import { IconButton } from '@/components/IconButton';
+import { useState } from 'react';
 
 const GLASS_LIGHT = 'rgba(75, 75, 75, 0.6)';
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
 export default function MainWindow() {
+
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = () => {
+    if (!message.trim()) return;
+    window.api.postMessage(message);
+    setMessage('');
+  }
+
   return (
     <main className="h-screen w-screen">
       <div className="draggable-area flex flex-col rounded-2xl overflow-hidden">
@@ -12,15 +22,19 @@ export default function MainWindow() {
           className="flex items-center gap-3 px-5 py-2.5 backdrop-blur-2xl"
           style={{ background: GLASS_LIGHT }}
         >
-          <input
+          <input  
             type="text"
             placeholder="Ask anything about your screen"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
             className="flex-1 bg-transparent text-white/90 placeholder:text-white/70 text-[15px] focus:outline-none"
           />
           <button
             type="button"
             className="flex items-center justify-center rounded-lg bg-white/20 p-2.5 text-white/80 transition-colors hover:bg-white/30"
             aria-label="Submit"
+            onClick={handleSubmit}
           >
             <CornerDownLeft className="size-4" />
           </button>

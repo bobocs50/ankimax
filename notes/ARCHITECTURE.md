@@ -1,6 +1,6 @@
 # Architecture
 
-## Overview
+## Overview..
 
 Ankimax is an Electron desktop app with a strict three-layer split:
 

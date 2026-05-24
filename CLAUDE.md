@@ -63,3 +63,14 @@ Follow the existing `getVersion` pattern:
 
 - Dev: Renderer at `http://localhost:5173`, DevTools open
 - Prod: Loads from `dist/index.html`, compiled Electron in `dist-electron/`
+
+## General Philosophy
+
+- Simple code that works. Don't over-engineer — prefer the straightforward solution over the clever one.
+
+## React Code Style
+
+- Collapse single-prop or short JSX elements to one line when they fit
+- Keep multi-prop elements on multiple lines
+- Inline `style`, `aria-label`, `onClick` on the same line as the element tag when possible
+- Use comments (`{/* Section */}`) to label distinct UI sections

@@ -4,16 +4,17 @@ interface IconButtonProps {
   icon: LucideIcon;
   label: string;
   onClick?: () => void;
+  active?: boolean;
 }
 
-export function IconButton({ icon: Icon, label, onClick }: IconButtonProps) {
+export function IconButton({ icon: Icon, label, onClick, active }: IconButtonProps) {
   return (
     <div className="relative group w-fit">
       <span className="pointer-events-none absolute inset-[-9px] rounded-xl bg-white/0 transition-colors group-hover:bg-white/20" />
       <button
         type="button"
         onClick={onClick}
-        className="relative flex items-center justify-center text-white/50 transition-colors hover:text-white/80"
+        className={`relative flex items-center justify-center transition-colors hover:text-white/80 ${active ? 'text-white' : 'text-white/50'}`}
         aria-label={label}
       >
         <Icon className="size-5" />

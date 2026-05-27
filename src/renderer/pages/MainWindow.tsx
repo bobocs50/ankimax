@@ -1,12 +1,12 @@
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, Square, CornerDownLeft, Settings, Sparkles, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Square, CornerDownLeft, Settings, Sparkles, Eye, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
 import { IconButton } from '@/components/IconButton';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const GLASS_LIGHT = 'rgba(75, 75, 75, 0.6)';
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-function ControlsBar({ borderTop = false }: { borderTop?: boolean }) {
+function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void }) {
   return (
     <div
       className={`flex items-center px-5 py-2.5 backdrop-blur-2xl ${borderTop ? 'border-t border-white/10' : ''}`}
@@ -19,6 +19,7 @@ function ControlsBar({ borderTop = false }: { borderTop?: boolean }) {
       <div className="flex flex-1 items-center justify-center gap-6">
         <IconButton icon={BookPlus} label="Create Flashcard" />
         <IconButton icon={Sparkles} label="Auto AI" />
+        <IconButton icon={Eye} label="Capture Screen" active={captureEnabled} onClick={onToggleCapture} />
         <IconButton icon={Paperclip} label="Context" />
         <div className="h-4 w-px bg-white/20" />
         <IconButton icon={FolderCog} label="Anki Deck" />
@@ -44,20 +45,23 @@ export default function MainWindow() {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; screenViewed?: boolean }[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
-  const [captureEnabled, setCaptureEnabled] = useState(true);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [captureEnabled, setCaptureEnabled] = useState(false);
+  const [newMsgIndex, setNewMsgIndex] = useState<number | null>(null);
+  const newUserMsgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (newMsgIndex === null || !newUserMsgRef.current) return;
+    newUserMsgRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [newMsgIndex]);
 
   const handleSubmit = async () => {
     if (!message.trim() || waitingForResponse) return;
 
     const capture = captureEnabled;
-    setCaptureEnabled(false);
+    const history = messages;
 
-    // Add user message to chat, then clear input
+    // Record index before adding so we can scroll to it after render
+    setNewMsgIndex(messages.length);
     setMessages((prev) => [...prev, { role: 'user', text: message }]);
     setMessage('');
     setWaitingForResponse(true);
@@ -68,7 +72,7 @@ export default function MainWindow() {
       window.api.expandWindow();
     }
 
-    const words = (await window.api.postMessage(message, capture)).split(' ');
+    const words = (await window.api.postMessage(message, capture, history)).split(' ');
     let i = 0;
     setMessages(prev => [...prev, { role: 'assistant', text: '', screenViewed: capture }]);
     const interval = setInterval(() => {
@@ -91,7 +95,7 @@ export default function MainWindow() {
 
   return (
     <main className="h-screen w-screen">
-      <div className={`draggable-area flex flex-col rounded-2xl overflow-hidden ${expanded ? 'h-full' : ''}`}>
+      <div className={`draggable-area flex flex-col rounded-2xl overflow-hidden w-full ${expanded ? 'h-full' : ''}`}>
 
         {/* Input bar */}
         <div className="flex items-center gap-3 px-5 py-2.5 backdrop-blur-2xl shrink-0" style={{ background: GLASS_LIGHT }}>
@@ -123,15 +127,11 @@ export default function MainWindow() {
 
             {/* Render every message in the conversation array */}
             {messages.map((msg, i) => (
-              // Align the row: user messages go right, AI messages go left
-              <div key={i} className={`mb-4 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+              <div key={i} ref={msg.role === 'user' && i === newMsgIndex ? newUserMsgRef : null} className={`mb-4 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                 {msg.role === 'user' ? (
-                  // User message
                   <span className="inline-block rounded-2xl bg-white/10 px-4 py-2 text-[14px] text-white/70">{msg.text}</span>
                 ) : (
-                  // AI message
                   <div>
-                    {/* Show label if screen was captured for this specific message */}
                     {msg.screenViewed && (
                       <p className="mb-1 text-[11px] text-white/35">Viewed Screen</p>
                     )}
@@ -150,13 +150,13 @@ export default function MainWindow() {
               </div>
             )}
 
-            {/* Invisible anchor — scrolled into view whenever messages update */}
-            <div ref={bottomRef} />
+            <div className="h-[268px]" />
+
           </div>
         )}
         
          {/* Controls area */}
-        <ControlsBar borderTop={expanded} />
+        <ControlsBar borderTop={expanded} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} />
 
       </div>
     </main>

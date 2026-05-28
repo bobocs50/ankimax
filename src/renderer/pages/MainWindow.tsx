@@ -2,10 +2,11 @@ import { Settings, Sparkles, Eye, Paperclip, BookPlus, FolderCog, ChevronDown } 
 import { IconButton } from '@/components/IconButton';
 import { useState } from 'react';
 import ChatWindow from './ChatWindow';
+import FlashcardWindow from './FlashcardWindow';
 
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void }) {
+function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, onOpenFlashcard }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void; onOpenFlashcard: () => void }) {
   return (
     <div
       className={`flex items-center px-5 py-2.5 backdrop-blur-2xl ${borderTop ? 'border-t border-white/10' : ''}`}
@@ -16,7 +17,7 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture }: { b
       </div>
 
       <div className="flex flex-1 items-center justify-center gap-6">
-        <IconButton icon={BookPlus} label="Create Flashcard" />
+        <IconButton icon={BookPlus} label="Create Flashcard" onClick={onOpenFlashcard} />
         <IconButton icon={Sparkles} label="Auto AI" />
         <IconButton icon={Eye} label="Capture Screen" active={captureEnabled} onClick={onToggleCapture} />
         <IconButton icon={Paperclip} label="Context" />
@@ -39,30 +40,39 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture }: { b
 }
 
 export default function MainWindow() {
-  const [expanded, setExpanded] = useState(false);
+  const [activePanel, setActivePanel] = useState<'chat' | 'flashcard' | null>(null);
   const [captureEnabled, setCaptureEnabled] = useState(false);
 
-  const handleExpand = () => {
-    setExpanded(true);
+  const handleOpenChat = () => {
+    setActivePanel('chat');
+    window.api.expandWindow();
+  };
+
+  const handleOpenFlashcard = () => {
+    setActivePanel('flashcard');
     window.api.expandWindow();
   };
 
   const handleCollapse = () => {
-    setExpanded(false);
+    setActivePanel(null);
     window.api.collapseWindow();
   };
 
   return (
     <main className="h-screen w-screen">
-      <div className={`draggable-area flex flex-col rounded-2xl overflow-hidden w-full ${expanded ? 'h-full' : ''}`}>
+      <div className={`draggable-area flex flex-col rounded-2xl overflow-hidden w-full ${activePanel !== null ? 'h-full' : ''}`}>
         <ChatWindow
-          expanded={expanded}
-          onExpand={handleExpand}
+          expanded={activePanel === 'chat'}
+          onExpand={handleOpenChat}
           onCollapse={handleCollapse}
           captureEnabled={captureEnabled}
         />
+        <FlashcardWindow
+          expanded={activePanel === 'flashcard'}
+          onCollapse={handleCollapse}
+        />
         {/* Controls area */}
-        <ControlsBar borderTop={expanded} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} />
+        <ControlsBar borderTop={activePanel !== null} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
       </div>
     </main>
   );

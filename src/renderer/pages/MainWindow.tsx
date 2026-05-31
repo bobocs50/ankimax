@@ -6,7 +6,7 @@ import FlashcardWindow from './FlashcardWindow';
 
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, onOpenFlashcard }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void; onOpenFlashcard: () => void }) {
+function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, autoAiEnabled, onToggleAutoAi, onOpenFlashcard }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void; autoAiEnabled: boolean; onToggleAutoAi: () => void; onOpenFlashcard: () => void }) {
   return (
     <div
       className={`flex items-center px-5 py-2.5 backdrop-blur-2xl ${borderTop ? 'border-t border-white/10' : ''}`}
@@ -18,7 +18,7 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, onOpe
 
       <div className="flex flex-1 items-center justify-center gap-6">
         <IconButton icon={BookPlus} label="Create Flashcard" onClick={onOpenFlashcard} />
-        <IconButton icon={Sparkles} label="Auto AI" />
+        <IconButton icon={Sparkles} label="Auto AI" active={autoAiEnabled} onClick={onToggleAutoAi} />
         <IconButton icon={Eye} label="Capture Screen" active={captureEnabled} onClick={onToggleCapture} />
         <IconButton icon={Paperclip} label="Context" />
         <div className="h-4 w-px bg-white/20" />
@@ -42,6 +42,7 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, onOpe
 export default function MainWindow() {
   const [activePanel, setActivePanel] = useState<'chat' | 'flashcard' | null>(null);
   const [captureEnabled, setCaptureEnabled] = useState(false);
+  const [autoAiEnabled, setAutoAiEnabled] = useState(false);
 
   const handleOpenChat = () => {
     setActivePanel('chat');
@@ -72,7 +73,7 @@ export default function MainWindow() {
           onCollapse={handleCollapse}
         />
         {/* Controls area */}
-        <ControlsBar borderTop={activePanel !== null} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
+        <ControlsBar borderTop={activePanel !== null} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} autoAiEnabled={autoAiEnabled} onToggleAutoAi={() => setAutoAiEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
       </div>
     </main>
   );

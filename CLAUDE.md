@@ -54,6 +54,15 @@ src/
 
 **Shared types** (`src/shared/electron.d.ts`): Declares the `window.api` interface for type safety in the renderer.
 
+### Current `window.api` surface
+
+```ts
+getVersion(): Promise<string>
+postMessage(message, captureEnabled, history): Promise<string>
+expandWindow(): Promise<void>
+collapseWindow(): Promise<void>
+```
+
 ### Adding New Desktop Capabilities
 
 Follow the existing `getVersion` pattern:
@@ -61,6 +70,10 @@ Follow the existing `getVersion` pattern:
 2. Expose method in `src/preload/preload.ts` via `contextBridge`
 3. Add type to `src/shared/electron.d.ts`
 4. Call from renderer via `window.api.methodName()`
+
+### Gemini API
+
+Calls are made with raw `fetch` in `src/main/ipc.ts` — no SDK. Multi-turn history is passed manually as a `contents` array. Screen capture attaches a base64 PNG via `inlineData` in the message parts.
 
 ### Security Model
 
@@ -77,9 +90,29 @@ Follow the existing `getVersion` pattern:
 
 The app is a frameless, transparent, always-on-top floating HUD (680×125px) positioned at the top center of the primary display. It expands to 680×500 when the chat panel is open. This is a deliberate UX constraint — don't change it without reason.
 
-### Planned Features (not yet built)
+### CSS Drag Region
 
-Several UI buttons in `MainWindow.tsx` are stubs for planned features: screen capture, flashcard generation, Anki export, persistent history, and a settings panel. The app currently only implements AI chat via Gemini.
+`global.css` defines drag behavior for the frameless window:
+- `.draggable-area` — makes a region draggable (`-webkit-app-region: drag`)
+- `.interactive` — opts out of drag on a child element (used on scrollable/clickable areas inside the drag region)
+- `button`, `input`, `select`, `textarea` are automatically non-draggable
+
+The `liquid-glass` and `liquid-glass-dark` utility classes provide the frosted glass material; `liquid-glass-bar` is a fixed 32px tall variant.
+
+### Stub Features
+
+These toolbar buttons exist in `MainWindow.tsx` but are not yet wired to functionality:
+- **Settings** — no panel
+- **Context** (Paperclip) — no state or action
+- **Anki Deck** (FolderCog) — no state or action
+- **History** button — no panel
+- **FlashcardWindow** — header exists, content area is blank
+
+Auto AI (Sparkles) and Capture Screen (Eye) are fully wired toggles.
+
+### Installed but lightly used
+
+`radix-ui`, `shadcn`, `clsx`, `tailwind-merge`, and CSS custom properties (shadcn design tokens) are installed and configured but not yet used in components. Available when building new UI.
 
 ### Development vs Production
 
@@ -113,3 +146,5 @@ Several UI buttons in `MainWindow.tsx` are stubs for planned features: screen ca
 **Section comments:** Label distinct UI blocks: `{/* Input bar */}` `{/* Response area */}`
 
 **Icons:** Use lucide-react. Import only what's used.
+
+**`IconButton` active prop:** When `active` is passed (boolean), the tooltip automatically shows `"Label On"` / `"Label Off"`. Omit `active` for stateless buttons to keep a plain label tooltip.

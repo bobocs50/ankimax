@@ -1,9 +1,18 @@
-import { ipcMain, BrowserWindow, desktopCapturer, systemPreferences } from 'electron';
+import { ipcMain, BrowserWindow, desktopCapturer, clipboard, systemPreferences } from 'electron';
 import dotenv from 'dotenv';
 dotenv.config();
 
 ipcMain.handle('app:get-version', () => {
   return '0.1.0';
+});
+
+ipcMain.handle('flashcard:get-cards', () => {
+
+  const image = clipboard.readImage();
+  if (!image.isEmpty()) {
+    console.log("Clipboard content inside")
+  }
+
 });
 
 ipcMain.handle('message:post-message', async (_event, message: string, captureEnabled: boolean, history: { role: string; text: string }[]) => {

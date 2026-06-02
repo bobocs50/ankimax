@@ -1,211 +1,102 @@
 # Roadmap
 
-## Purpose
+## MVP — Ship This First
 
-This note turns the vision into an implementation sequence. Use the checkboxes to track progress.
-
----
-
-## Phase 1: HUD Foundation
-
-**Goal:** Make the overlay shell feel intentional and ready to host real workflows.
-
-**Status:** In Progress
-
-### Tasks
-
-- [x] Set up Electron main, preload, and renderer boundaries
-- [x] Create typed preload bridge (`window.api`)
-- [x] Create HUD-style overlay window (frameless, transparent, always on top)
-- [x] Implement two-row HUD layout (search bar + toolbar)
-- [x] Add search input with submit button
-- [x] Add toolbar buttons: Settings, Card, AI, Attach, History
-- [x] Add vertical divider between button groups
-- [x] Style glass effect (light top bar, dark bottom toolbar)
-- [x] Make window draggable
-- [ ] Add keyboard shortcuts for opening/dismissing HUD
-- [ ] Wire up button click handlers to state changes
-- [ ] Define renderer state model (activeMode, aiEnabled, etc.)
-- [ ] Add visual feedback for AI toggle (on/off state)
-
-### Exit Criteria
-
-- [x] HUD opens reliably
-- [x] Bar layout is stable
-- [ ] Actions wired to real commands or clear placeholders
-- [ ] Shell ready for capture-driven workflows
+One loop: capture → AI card → edit → push to Anki.
 
 ---
 
-## Phase 2: Card Editor Panel
+## Phase 1: HUD Foundation ✅
 
-**Goal:** Build the popout card editor UI.
-
-**Status:** Not Started
-
-### Tasks
-
-- [ ] Create card editor popout component
-- [ ] Two-column layout: Front (Question/Prompt) | Back (Answer/Definition)
-- [ ] Add copy button [📋]
-- [ ] Add close button [✕]
-- [ ] Add collapse button [⌄]
-- [ ] Add footer with "Save Card" button
-- [ ] Add deck selection button (placeholder)
-- [ ] Toggle popout visibility when Card button clicked
-- [ ] Handle collapse/expand transitions
-
-### Exit Criteria
-
-- [ ] Clicking Card opens the editor panel
-- [ ] User can type in Front and Back fields
-- [ ] Close/collapse buttons work
-- [ ] Save Card button is wired (placeholder action)
+- [x] Electron main/preload/renderer boundaries
+- [x] Typed preload bridge (`window.api`)
+- [x] Frameless, transparent, always-on-top HUD
+- [x] Input bar + toolbar layout
+- [x] Screen capture toggle (Eye)
+- [x] AI toggle (Sparkles)
+- [x] Glass styling, drag region
+- [x] Basic chat — question + screen → AI answer
 
 ---
 
-## Phase 3: Screenshot & Clipboard
+## Phase 2: Stateless Chat
 
-**Goal:** Let the user provide screenshot context for AI.
+**Goal:** Simplify chat — no history, fresh context every time.
 
-**Status:** Not Started
-
-### Tasks
-
-- [ ] Read screenshot from clipboard (if exists)
-- [ ] Capture full desktop screenshot (fallback when no clipboard)
-- [ ] Show attached screenshot thumbnail in card editor
-- [ ] Add remove button on thumbnail
-- [ ] Handle Attach button click
-- [ ] Store current screenshot in renderer state
-- [ ] Pass screenshot to AI when submitting
-
-### Think Later
-
-- [ ] Region selection tool (like screenshot crop)
-- [ ] Hotkey to trigger capture
-
-### Exit Criteria
-
-- [ ] App detects clipboard screenshot
-- [ ] App can capture full desktop as fallback
-- [ ] Thumbnail displays in card editor
-- [ ] Screenshot ready to send with AI requests
+- [ ] Remove multi-turn history from `postMessage` IPC call
+- [ ] Each chat open starts a new session (no `contents` array carried over)
 
 ---
 
-## Phase 4: AI Integration
+## Phase 3: Flashcard Editor
 
-**Goal:** Connect to LLM for question answering and card generation.
+**Goal:** Wire up FlashcardWindow so a user can actually edit a card.
 
-**Status:** Not Started
-
-### Tasks
-
-- [ ] Add AI toggle state (on/off)
-- [ ] Visual indicator when AI is active
-- [ ] Set up LLM API connection in main process
-- [ ] Create IPC handler for AI requests
-- [ ] Implement "Ask Mode": question + screenshot → answer
-- [ ] Implement "Card Generation": screenshot → Front/Back draft
-- [ ] Display AI responses in popout panel
-- [ ] Show loading state while AI is processing
-- [ ] Handle AI errors gracefully
-
-### Exit Criteria
-
-- [ ] AI toggle works visually and functionally
-- [ ] Questions get answered with screenshot context
-- [ ] Cards get auto-filled when AI is ON + screenshot attached
-- [ ] Errors display helpful messages
+- [ ] Front field (text input)
+- [ ] Back field (text input)
+- [ ] Screenshot thumbnail shown as reference
+- [ ] AI fills Front & Back from screenshot (AI ON)
+- [ ] Blank fields when AI OFF (manual mode)
 
 ---
 
-## Phase 5: Anki Export
+## Card Generation Style — MUST HAVE
 
-**Goal:** Push approved cards to Anki.
+**Goal:** User defines how AI generates cards. Set once, applied to every AI card.
 
-**Status:** Not Started
-
-### Tasks
-
-- [ ] Research AnkiConnect API
-- [ ] Add connection check (is Anki running?)
-- [ ] Fetch available decks from Anki
-- [ ] Implement deck selection dropdown
-- [ ] Export card with Front/Back fields
-- [ ] Handle export success (close panel, show confirmation)
-- [ ] Handle export failure (show error, keep panel open)
-
-### Exit Criteria
-
-- [ ] App verifies Anki is available
-- [ ] User can select a deck
-- [ ] Card exports successfully
-- [ ] Clear feedback on success/failure
+- [ ] User can define a custom card style template (e.g. Pareto method, short definition, example-based, color-coded, etc.)
+- [ ] AI uses this template when generating Front and Back
+- [ ] Template is set once and applies globally to all AI-generated cards
+- [ ] This is core card generation behavior — not a buried settings option
 
 ---
 
-## Phase 6: History & Persistence
+## Phase 4: AnkiConnect
 
-**Goal:** Track recent cards and persist state.
+**Goal:** Push a card to Anki from inside the app.
 
-**Status:** Later
-
-### Tasks
-
-- [ ] Store recent cards locally
-- [ ] Implement History dropdown UI
-- [ ] Show today/yesterday grouping
-- [ ] Click history item to view details
-- [ ] Persist AI toggle preference
-- [ ] Persist last selected deck
-
-### Exit Criteria
-
-- [ ] Recent cards appear in History dropdown
-- [ ] Preferences survive app restart
+- [ ] Check if Anki is running (ping AnkiConnect at `localhost:8765`)
+- [ ] Fetch deck list from Anki
+- [ ] Deck picker in FlashcardWindow footer
+- [ ] "Add to Anki" button — POST card to selected deck
+- [ ] Success: close editor, show brief confirmation
+- [ ] Failure: show error, keep editor open
 
 ---
 
-## Phase 7: Hardening & Polish
+## Phase 5: Ship
 
-**Goal:** Make the workflow robust for regular use.
-
-**Status:** Later
-
-### Tasks
-
-- [ ] Add settings panel
-- [ ] Error boundaries and retry behavior
-- [ ] Loading states throughout
-- [ ] Keyboard navigation
-- [ ] Package and sign for distribution
-- [ ] Write release documentation
-
-### Exit Criteria
-
-- [ ] Main workflow survives normal user mistakes
-- [ ] App state is recoverable
-- [ ] Release steps are documented and repeatable
+- [ ] End-to-end test: capture → AI card → edit → push to Anki
+- [ ] `npm run dist` builds and runs cleanly
+- [ ] Hand off to first user
 
 ---
 
-## Quick Reference: Build Order
+## After MVP — What Makes It Irreplaceable
 
-1. ~~HUD shell~~ (in progress)
-2. Card editor panel
-3. Screenshot & clipboard
-4. AI integration
-5. Anki export
-6. History & persistence
-7. Hardening & polish
+Do none of this until the core loop is validated with real users.
+
+**AI that learns from your edits**
+- When user edits an AI-generated card, store the delta
+- Use stored edits to improve future generations for that user
+- Personalisation that compounds — not replicable by a generic tool
+
+**What am I missing?**
+- Input A: existing Anki deck via AnkiConnect → "you have no cards on clinical presentation"
+- Input B: syllabus or topic list → "you haven't carded renal yet"
+- Surface gaps as a suggestion, not a blocker
+
 
 ---
 
-## Notes
+## Cut From MVP
 
-- Do not expand into broad chat before the capture-first workflow works
-- Keep all privileged desktop capabilities behind preload and IPC
-- Prefer one strong end-to-end flow over several half-finished tools
-- Update this note when a phase is completed or the product scope changes
+Do these after validation, not before.
+
+- **Chat history** — stateless is fine for v1
+- **Image occlusion** — different card type, different editor, save for v1.1
+- **Settings panel** — hardcode what you need
+- **History panel** — not needed to validate the loop
+- **Büroklammer staging area** — nice UX, not blocking
+- **Hotkeys** — add after the loop works
+- **Hardening & polish** — do after real users use it

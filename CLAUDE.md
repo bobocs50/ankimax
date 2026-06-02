@@ -59,6 +59,7 @@ src/
 ```ts
 getVersion(): Promise<string>
 postMessage(message, captureEnabled, history): Promise<string>
+getCards(): Promise<void>
 expandWindow(): Promise<void>
 collapseWindow(): Promise<void>
 ```
@@ -70,6 +71,8 @@ Follow the existing `getVersion` pattern:
 2. Expose method in `src/preload/preload.ts` via `contextBridge`
 3. Add type to `src/shared/electron.d.ts`
 4. Call from renderer via `window.api.methodName()`
+
+IPC channel names follow the `namespace:action` pattern (e.g. `app:get-version`, `window:expand`, `flashcard:get-cards`).
 
 ### Gemini API
 
@@ -99,16 +102,20 @@ The app is a frameless, transparent, always-on-top floating HUD (680×125px) pos
 
 The `liquid-glass` and `liquid-glass-dark` utility classes provide the frosted glass material; `liquid-glass-bar` is a fixed 32px tall variant.
 
-### Stub Features
+### Wired vs Stub Features
 
-These toolbar buttons exist in `MainWindow.tsx` but are not yet wired to functionality:
+Fully wired:
+- **Auto AI** (Sparkles) — toggles a 1s polling interval that calls `getCards()`, which reads the clipboard image in the main process
+- **Capture Screen** (Eye) — attaches a desktop screenshot (base64 PNG) to the next `postMessage` call
+- **Create Flashcard** (BookPlus) — opens `FlashcardWindow` with front/back `CardField` text areas
+
+Stubs (buttons exist but no functionality):
 - **Settings** — no panel
-- **Context** (Paperclip) — no state or action
 - **Anki Deck** (FolderCog) — no state or action
 - **History** button — no panel
-- **FlashcardWindow** — header exists, content area is blank
+- **FlashcardWindow fields** — front/back text entry works, but saving to Anki is not yet implemented
 
-Auto AI (Sparkles) and Capture Screen (Eye) are fully wired toggles.
+Response streaming in `ChatWindow` is simulated client-side: the full API response arrives at once, then words are appended at 50ms intervals.
 
 ### Installed but lightly used
 

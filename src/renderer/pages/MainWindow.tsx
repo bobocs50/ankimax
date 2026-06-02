@@ -1,6 +1,6 @@
 import { Settings, Sparkles, Eye, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
 import { IconButton } from '@/components/IconButton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatWindow from './ChatWindow';
 import FlashcardWindow from './FlashcardWindow';
 
@@ -59,6 +59,12 @@ export default function MainWindow() {
     setActivePanel(null);
     window.api.collapseWindow();
   };
+
+  useEffect(() => {
+    if (!autoAiEnabled) return;
+    const interval_id = setInterval(() => window.api.getCards(), 1000);
+    return () => clearInterval(interval_id);
+  }, [autoAiEnabled]);
 
   return (
     <main className="h-screen w-screen">

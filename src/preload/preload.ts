@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('api', {
   //Message API
   postMessage: (message: string, captureEnabled: boolean, history: { role: string; text: string }[]) => ipcRenderer.invoke('message:post-message', message, captureEnabled, history),
 
+  //Flashcard API
+  getCards: () => ipcRenderer.invoke('flashcard:get-cards'),
+
   //Window API
   expandWindow: () => ipcRenderer.invoke('window:expand'),
   collapseWindow: () => ipcRenderer.invoke('window:collapse')

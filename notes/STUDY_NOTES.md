@@ -67,3 +67,48 @@ Think of it like this: React calls your function and hands you a note (`e`) that
 
 ---
 
+## #3 — Scrolling to a Specific Element with useRef
+
+When you want to scroll to a specific DOM element (e.g. scroll your new message to the top of the chat), you use a `ref`.
+
+**The pieces:**
+
+```ts
+const newUserMsgRef = useRef<HTMLDivElement>(null); // starts empty
+const [newMsgIndex, setNewMsgIndex] = useState<number | null>(null); // tracks which message is new
+```
+
+**On submit, save the index before adding the message:**
+
+```ts
+setNewMsgIndex(messages.length); // e.g. 3
+setMessages(prev => [...prev, { role: 'user', text: message }]);
+```
+
+**In the list, attach the ref only to the new message:**
+
+```tsx
+<div
+  key={i}
+  ref={msg.role === 'user' && i === newMsgIndex ? newUserMsgRef : null}
+>
+```
+
+The loop runs for every message (i = 0, 1, 2, 3...). Only when `i === newMsgIndex` (e.g. `3 === 3`) does the condition become true and the ref gets attached. All others get `null`.
+
+**The effect scrolls it into view when the index changes:**
+
+```ts
+useEffect(() => {
+  if (newMsgIndex === null || !newUserMsgRef.current) return;
+  newUserMsgRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}, [newMsgIndex]);
+```
+
+- `block: 'start'` — aligns the element to the top of the scroll area
+- `behavior: 'smooth'` — animates instead of jumping
+
+**In short:** save the index → React attaches the ref to that one div → effect fires → scroll.
+
+---
+

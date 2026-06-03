@@ -19,12 +19,11 @@ One loop: capture → AI card → edit → push to Anki.
 
 ---
 
-## Phase 2: Stateless Chat
+## Phase 2: Stateless Chat ✅
 
 **Goal:** Simplify chat — no history, fresh context every time.
 
-- [ ] Remove multi-turn history from `postMessage` IPC call
-- [ ] Each chat open starts a new session (no `contents` array carried over)
+- [x] Each chat open starts a new session (no `contents` array carried over)
 
 ---
 

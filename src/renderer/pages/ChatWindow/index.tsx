@@ -53,6 +53,13 @@ export default function ChatWindow({ expanded, showBack, onExpand, onCollapse, c
     newUserMsgRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, [newMsgIndex]);
 
+  useEffect(() => {
+    if (!expanded) {
+      setMessages([]);
+      setNewMsgIndex(null);
+    }
+  }, [expanded]);
+
   const handleSubmit = async () => {
     if (!message.trim() || waitingForResponse) return;
 

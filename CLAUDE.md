@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Roadmap
+
+`notes/ROADMAP.md` tracks MVP progress. If the user mentions the roadmap before a task, tick the relevant checkbox(es) after completing the work — without needing to be asked.
+
 ## Study Notes
 
 `notes/STUDY_NOTES.md` is the user's personal learning journal. Claude can read and write to it when the user explicitly asks.

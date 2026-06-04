@@ -26,7 +26,7 @@ One loop: capture → AI card → edit → push to Anki.
 - [x] Each chat open starts a new session (no `contents` array carried over)
 
 ---
-
+d
 ## Phase 3: Flashcard Editor
 
 **Goal:** Wire up FlashcardWindow so a user can actually edit a card.

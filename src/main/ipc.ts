@@ -1,19 +1,34 @@
 import { ipcMain, BrowserWindow, desktopCapturer, clipboard, systemPreferences } from 'electron';
+import { createHash } from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
-ipcMain.handle('app:get-version', () => {
-  return '0.1.0';
+//Hashing clipboard content to detect changes without storing the actual image data in memory
+
+let lastClipboardHash: string | null = null;
+
+const getClipboardHash = (): string | null => {
+  const image = clipboard.readImage();
+  if (image.isEmpty()) return null;
+  return createHash('md5').update(image.toPNG()).digest('hex');
+};
+
+//ipcMain handlers for communication with renderer process
+
+ipcMain.handle('flashcard:init-clipboard-baseline', () => {
+  lastClipboardHash = getClipboardHash();
+  console.log('Clipboard baseline set:', lastClipboardHash ?? 'empty');
 });
 
 ipcMain.handle('flashcard:get-cards', () => {
-
-  const image = clipboard.readImage();
-  if (!image.isEmpty()) {
-    console.log("Clipboard content inside")
+  const hash = getClipboardHash();
+  if (hash !== null && hash !== lastClipboardHash) {
+    lastClipboardHash = hash;
+    console.log('New clipboard image detected:', hash);
   }
-
 });
+
+//Handler for processing user messages and generating AI responses
 
 ipcMain.handle('message:post-message', async (_event, message: string, captureEnabled: boolean, history: { role: string; text: string }[]) => {
 
@@ -50,6 +65,8 @@ ipcMain.handle('message:post-message', async (_event, message: string, captureEn
   if (!res.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${res.status}`);
   return data.candidates![0].content.parts[0].text;
 });
+
+// Handlers for window resizing based on user interactions in the renderer process
 
 ipcMain.handle('window:expand', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.setSize(680, 500);

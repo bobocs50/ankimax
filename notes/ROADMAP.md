@@ -31,18 +31,17 @@ One loop: capture → AI card → edit → push to Anki.
 
 **Goal:** Wire up FlashcardWindow so a user can actually edit a card.
 
-- [ ] Front field (text input)
-- [ ] Back field (text input)
-- [ ] Screenshot thumbnail shown as reference
+- [x] Front field (text input)
+- [x] Back field (text input)
 - [ ] AI fills Front & Back from screenshot (AI ON)
-- [ ] Blank fields when AI OFF (manual mode)
+- [ ] Anki input field possibilities (bullet, list, etc.)
 
 ---
 
 ## Card Generation Style — MUST HAVE
 
 **Goal:** User defines how AI generates cards. Set once, applied to every AI card.
-
+d
 - [ ] User can define a custom card style template (e.g. Pareto method, short definition, example-based, color-coded, etc.)
 - [ ] AI uses this template when generating Front and Back
 - [ ] Template is set once and applies globally to all AI-generated cards

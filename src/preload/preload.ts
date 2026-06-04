@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   postMessage: (message: string, captureEnabled: boolean, history: { role: string; text: string }[]) => ipcRenderer.invoke('message:post-message', message, captureEnabled, history),
 
   //Flashcard API
+  initClipboardBaseline: () => ipcRenderer.invoke('flashcard:init-clipboard-baseline'),
   getCards: () => ipcRenderer.invoke('flashcard:get-cards'),
 
   //Window API

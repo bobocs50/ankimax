@@ -62,7 +62,8 @@ export default function MainWindow() {
 
   useEffect(() => {
     if (!autoAiEnabled) return;
-    const interval_id = setInterval(() => window.api.getCards(), 1000);
+    window.api.initClipboardBaseline();
+    const interval_id = setInterval(() => window.api.getCards(), 500);
     return () => clearInterval(interval_id);
   }, [autoAiEnabled]);
 

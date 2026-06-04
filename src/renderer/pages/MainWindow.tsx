@@ -63,7 +63,15 @@ export default function MainWindow() {
   useEffect(() => {
     if (!autoAiEnabled) return;
     window.api.initClipboardBaseline();
-    const interval_id = setInterval(() => window.api.getCards(), 500);
+    const interval_id = setInterval(async () => {
+      const card = await window.api.getCards();
+      if (card) {
+        setFlashFront(card.front);
+        setFlashBack(card.back);
+        setActivePanel('flashcard');
+        window.api.expandWindow();
+      }
+    }, 500);
     return () => clearInterval(interval_id);
   }, [autoAiEnabled]);
 

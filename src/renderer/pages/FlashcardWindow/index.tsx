@@ -1,20 +1,26 @@
+import { useEffect, useRef } from 'react';
+
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-const autoResize = (el: HTMLTextAreaElement) => {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-};
-
 function CardField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.style.height = 'auto';
+    ref.current.style.height = ref.current.scrollHeight + 'px';
+  }, [value]);
+
   return (
     <div className="border-b border-white/10">
       <div className="flex items-center px-4 py-2 text-white/60">
         <span className="text-[13px]">{label}</span>
       </div>
       <textarea
+        ref={ref}
         rows={1}
         value={value}
-        onChange={e => { onChange(e.target.value); autoResize(e.target); }}
+        onChange={e => onChange(e.target.value)}
         className="w-full bg-transparent px-4 pb-3 text-[14px] text-white/90 placeholder:text-white/30 focus:outline-none overflow-hidden resize-none"
         style={{ minHeight: '2.5rem' }}
       />

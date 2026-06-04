@@ -1,9 +1,14 @@
-import { ipcMain, BrowserWindow, desktopCapturer, clipboard, systemPreferences } from 'electron';
+import { ipcMain, BrowserWindow, desktopCapturer, clipboard } from 'electron';
 import { createHash } from 'crypto';
 import dotenv from 'dotenv';
+import { prompts } from './prompts';
 dotenv.config();
 
-//Hashing clipboard content to detect changes without storing the actual image data in memory
+const apiKey = process.env.GEMINI_API_KEY;
+const model = process.env.GEMINI_MODEL;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+// Hashing clipboard content to detect changes without storing the actual image data in memory
 
 let lastClipboardHash: string | null = null;
 
@@ -13,29 +18,60 @@ const getClipboardHash = (): string | null => {
   return createHash('md5').update(image.toPNG()).digest('hex');
 };
 
-//ipcMain handlers for communication with renderer process
+// ipcMain handlers for communication with renderer process
 
 ipcMain.handle('flashcard:init-clipboard-baseline', () => {
   lastClipboardHash = getClipboardHash();
   console.log('Clipboard baseline set:', lastClipboardHash ?? 'empty');
 });
 
-ipcMain.handle('flashcard:get-cards', () => {
+ipcMain.handle('flashcard:get-cards', async () => {
   const hash = getClipboardHash();
   if (hash !== null && hash !== lastClipboardHash) {
     lastClipboardHash = hash;
-    console.log('New clipboard image detected:', hash);
+
+    const image = clipboard.readImage();
+    const base64 = image.toDataURL().split(',')[1];
+    const contents = [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/png', data: base64 } }] }];
+
+    console.log("Sending clipboard image for flashcard generation and updated baseline hash:", lastClipboardHash);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: prompts.flashcard }] },
+        contents,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'object',
+            properties: {
+              front: { type: 'string' },
+              back: { type: 'array', items: { type: 'string' } },
+            },
+            required: ['front', 'back'],
+          },
+        },
+      }),
+    });
+
+    const data = await res.json() as { candidates?: { content: { parts: { text: string }[] } }[]; error?: { message: string } };
+    if (!res.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${res.status}`);
+
+    const raw = JSON.parse(data.candidates![0].content.parts[0].text) as { front: string; back: string[] | string };
+    const bullets = Array.isArray(raw.back) && raw.back.length > 1
+      ? raw.back
+      : String(raw.back).split('•').filter(s => s.trim());
+    const card = { front: raw.front, back: bullets.map(b => `• ${b.trim()}`).join('\n') };
+    console.log('Generated flashcard:', card);
+    return card;
   }
 });
 
-//Handler for processing user messages and generating AI responses
+// Handler for processing user messages and generating AI responses
 
 ipcMain.handle('message:post-message', async (_event, message: string, captureEnabled: boolean, history: { role: string; text: string }[]) => {
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL;
-  const systemPrompt = process.env.SYSTEM_PROMPT;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const currentParts: object[] = [{ text: message }];
 
@@ -56,11 +92,11 @@ ipcMain.handle('message:post-message', async (_event, message: string, captureEn
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
+      systemInstruction: { parts: [{ text: prompts.chat }] },
       contents,
     }),
   });
-  
+
   const data = await res.json() as { candidates?: { content: { parts: { text: string }[] } }[]; error?: { message: string } };
   if (!res.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${res.status}`);
   return data.candidates![0].content.parts[0].text;

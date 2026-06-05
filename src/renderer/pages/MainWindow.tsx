@@ -1,12 +1,12 @@
 import { Settings, Sparkles, Eye, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
 import { IconButton } from '@/components/IconButton';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ChatWindow from './ChatWindow';
 import FlashcardWindow from './FlashcardWindow';
 
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, autoAiEnabled, onToggleAutoAi, onOpenFlashcard }: { borderTop?: boolean; captureEnabled: boolean; onToggleCapture: () => void; autoAiEnabled: boolean; onToggleAutoAi: () => void; onOpenFlashcard: () => void }) {
+function ControlsBar({ borderTop = false, captureScreenEnabled, onToggleCapture, autoAiEnabled, onToggleAutoAi, onOpenFlashcard }: { borderTop?: boolean; captureScreenEnabled: boolean; onToggleCapture: () => void; autoAiEnabled: boolean; onToggleAutoAi: () => void; onOpenFlashcard: () => void }) {
   return (
     <div
       className={`flex items-center px-5 py-2.5 backdrop-blur-2xl ${borderTop ? 'border-t border-white/10' : ''}`}
@@ -19,7 +19,7 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, autoA
       <div className="flex flex-1 items-center justify-center gap-6">
         <IconButton icon={BookPlus} label="Create Flashcard" onClick={onOpenFlashcard} />
         <IconButton icon={Sparkles} label="Auto AI" active={autoAiEnabled} onClick={onToggleAutoAi} />
-        <IconButton icon={Eye} label="Capture Screen" active={captureEnabled} onClick={onToggleCapture} />
+        <IconButton icon={Eye} label="Capture Screen" active={captureScreenEnabled} onClick={onToggleCapture} />
         <div className="h-4 w-px bg-white/20" />
         <IconButton icon={FolderCog} label="Anki Deck" />
       </div>
@@ -40,7 +40,7 @@ function ControlsBar({ borderTop = false, captureEnabled, onToggleCapture, autoA
 
 export default function MainWindow() {
   const [activePanel, setActivePanel] = useState<'chat' | 'flashcard' | null>(null);
-  const [captureEnabled, setCaptureEnabled] = useState(false);
+  const [captureScreenEnabled, setCaptureScreenEnabled] = useState(false);
   const [autoAiEnabled, setAutoAiEnabled] = useState(false);
   const [flashFront, setFlashFront] = useState('');
   const [flashBack, setFlashBack] = useState('');
@@ -60,17 +60,27 @@ export default function MainWindow() {
     window.api.collapseWindow();
   };
 
+  const isGenerating = useRef(false);
+
   useEffect(() => {
     if (!autoAiEnabled) return;
     window.api.initClipboardBaseline();
+
     const interval_id = setInterval(async () => {
-      const card = await window.api.getCards();
+      if (isGenerating.current) return;
+      const changed = await window.api.checkClipboard();
+      if (!changed) return;
+
+      
+      isGenerating.current = true;
+      window.api.expandWindow();
+      setActivePanel('flashcard');
+      const card = await window.api.generateCard();
       if (card) {
         setFlashFront(card.front);
         setFlashBack(card.back);
-        setActivePanel('flashcard');
-        window.api.expandWindow();
       }
+      isGenerating.current = false;
     }, 500);
     return () => clearInterval(interval_id);
   }, [autoAiEnabled]);
@@ -83,7 +93,7 @@ export default function MainWindow() {
           showBack={activePanel !== null}
           onExpand={handleOpenChat}
           onCollapse={handleCollapse}
-          captureEnabled={captureEnabled}
+          captureScreenEnabled={captureScreenEnabled}
         />
         <FlashcardWindow
           expanded={activePanel === 'flashcard'}
@@ -93,7 +103,7 @@ export default function MainWindow() {
           onBackChange={setFlashBack}
         />
         {/* Controls area */}
-        <ControlsBar borderTop={activePanel !== null} captureEnabled={captureEnabled} onToggleCapture={() => setCaptureEnabled(v => !v)} autoAiEnabled={autoAiEnabled} onToggleAutoAi={() => setAutoAiEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
+        <ControlsBar borderTop={activePanel !== null} captureScreenEnabled={captureScreenEnabled} onToggleCapture={() => setCaptureScreenEnabled(v => !v)} autoAiEnabled={autoAiEnabled} onToggleAutoAi={() => setAutoAiEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
       </div>
     </main>
   );

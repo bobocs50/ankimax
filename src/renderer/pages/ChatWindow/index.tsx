@@ -38,10 +38,10 @@ interface ChatWindowProps {
   showBack?: boolean;
   onExpand: () => void;
   onCollapse: () => void;
-  captureEnabled: boolean;
+  captureScreenEnabled: boolean;
 }
 
-export default function ChatWindow({ expanded, showBack, onExpand, onCollapse, captureEnabled }: ChatWindowProps) {
+export default function ChatWindow({ expanded, showBack, onExpand, onCollapse, captureScreenEnabled }: ChatWindowProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; screenViewed?: boolean }[]>([]);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
@@ -63,7 +63,7 @@ export default function ChatWindow({ expanded, showBack, onExpand, onCollapse, c
   const handleSubmit = async () => {
     if (!message.trim() || waitingForResponse) return;
 
-    const capture = captureEnabled;
+    const captureScreen = captureScreenEnabled;
     const history = messages;
 
     setNewMsgIndex(messages.length);
@@ -73,9 +73,9 @@ export default function ChatWindow({ expanded, showBack, onExpand, onCollapse, c
 
     if (!expanded) onExpand();
 
-    const words = (await window.api.postMessage(message, capture, history)).split(' ');
+    const words = (await window.api.postMessage(message, captureScreen, history)).split(' ');
     let i = 0;
-    setMessages(prev => [...prev, { role: 'assistant', text: '', screenViewed: capture }]);
+    setMessages(prev => [...prev, { role: 'assistant', text: '', screenViewed: captureScreen }]);
     const interval = setInterval(() => {
       i++;
       setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], text: words.slice(0, i).join(' ') }; return u; });

@@ -68,6 +68,10 @@ expandWindow(): Promise<void>
 collapseWindow(): Promise<void>
 ```
 
+### IPC Handler Comments
+
+Every `ipcMain.handle` in `src/main/ipc.ts` must have a one-line comment directly above it describing what it does. Keep it short — one sentence, no period needed.
+
 ### Adding New Desktop Capabilities
 
 Follow the existing `getVersion` pattern:

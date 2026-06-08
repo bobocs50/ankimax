@@ -1,11 +1,9 @@
 import { ipcMain, BrowserWindow, desktopCapturer, clipboard } from 'electron';
+import { mainWindow } from './main';
 import { createHash } from 'crypto';
-import fs from 'fs';
-import path from 'path';
 import dotenv from 'dotenv';
 import { prompts } from './prompts';
 
-const screenshotsDir = path.join(__dirname, '../../src/main/screenshots');
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -23,12 +21,14 @@ const getClipboardHash = (): string | null => {
   return createHash('md5').update(image.toPNG()).digest('hex');
 };
 
-// ipcMain handlers for communication with renderer process
+// Sets the clipboard baseline so future checks can detect new images
 
 ipcMain.handle('flashcard:init-clipboard-baseline', () => {
   lastClipboardHash = getClipboardHash();
   console.log('AutoAI turned on + Clipboard baseline set:', lastClipboardHash ?? 'empty');
 });
+
+// Returns true if a new image was copied to the clipboard since last check
 
 ipcMain.handle('flashcard:check-clipboard', () => {
   const hash = getClipboardHash();
@@ -38,6 +38,8 @@ ipcMain.handle('flashcard:check-clipboard', () => {
   pendingCardBase64 = image.toDataURL().split(',')[1];
   return true;
 });
+
+// Sends the pending clipboard image to Gemini and returns a flashcard
 
 ipcMain.handle('flashcard:generate-card', async () => {
   if (!pendingCardBase64) return undefined;
@@ -79,20 +81,19 @@ ipcMain.handle('flashcard:generate-card', async () => {
   return card;
 });
 
-// Handler for processing user messages and generating AI responses
+// Sends a chat message to Gemini, optionally attaching a screenshot
 
 ipcMain.handle('message:post-message', async (_event, message: string, captureScreenEnabled: boolean, history: { role: string; text: string }[]) => {
 
   const currentParts: object[] = [{ text: message }];
 
   if (captureScreenEnabled) {
+    mainWindow?.setContentProtection(true);
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1920, height: 1080 } });
+    mainWindow?.setContentProtection(false);
     const thumbnail = sources[0].thumbnail;
     const png = thumbnail.toPNG();
     const base64 = png.toString('base64');
-    fs.mkdirSync(screenshotsDir, { recursive: true });
-    fs.writeFileSync(path.join(screenshotsDir, `${Date.now()}.png`), png);
-    console.log('Captured screen, saved to', screenshotsDir);
     currentParts.push({ inlineData: { mimeType: 'image/png', data: base64 } });
   }
 
@@ -115,11 +116,13 @@ ipcMain.handle('message:post-message', async (_event, message: string, captureSc
   return data.candidates![0].content.parts[0].text;
 });
 
-// Handlers for window resizing based on user interactions in the renderer process
+// Expands the window to show the chat panel
 
 ipcMain.handle('window:expand', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.setSize(680, 500);
 });
+
+// Collapses the window back to the HUD bar
 
 ipcMain.handle('window:collapse', (event) => {
   BrowserWindow.fromWebContents(event.sender)?.setSize(680, 125);

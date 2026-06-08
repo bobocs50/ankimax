@@ -4,9 +4,11 @@ import './ipc';
 
 const isDev = !app.isPackaged;
 
+export let mainWindow: BrowserWindow | null = null;
+
 //Windows
 function createFloatingHud() {
-  const window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 680,
     height: 125,
     frame: false,
@@ -23,21 +25,19 @@ function createFloatingHud() {
     }
   });
 
-  window.setContentProtection(true);
-
   // Position at top center of screen
   const display = screen.getPrimaryDisplay();
   const x = Math.round((display.bounds.width - 680) / 2);
   const y = 40;
-  window.setPosition(x, y);
+  mainWindow.setPosition(x, y);
 
   if (isDev) {
-    void window.loadURL('http://localhost:5173');
-    window.webContents.openDevTools({ mode: 'detach' });
+    void mainWindow.loadURL('http://localhost:5173');
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
     return;
   }
 
-  void window.loadFile(path.join(__dirname, '../../dist/index.html'));
+  void mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
 }
 
 //Starts after app is finished initializing -> Runs once

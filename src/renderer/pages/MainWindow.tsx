@@ -60,19 +60,20 @@ export default function MainWindow() {
     window.api.collapseWindow();
   };
 
-  const isGenerating = useRef(false);
+  const [generatingFlashcard, setGeneratingFlashcard] = useState(false);
+  const generatingFlashcardRef = useRef(false);
 
   useEffect(() => {
     if (!autoAiEnabled) return;
     window.api.initClipboardBaseline();
 
     const interval_id = setInterval(async () => {
-      if (isGenerating.current) return;
+      if (generatingFlashcardRef.current) return;
       const changed = await window.api.checkClipboard();
       if (!changed) return;
 
-      
-      isGenerating.current = true;
+      generatingFlashcardRef.current = true;
+      setGeneratingFlashcard(true);
       window.api.expandWindow();
       setActivePanel('flashcard');
       const card = await window.api.generateCard();
@@ -80,7 +81,8 @@ export default function MainWindow() {
         setFlashFront(card.front);
         setFlashBack(card.back);
       }
-      isGenerating.current = false;
+      generatingFlashcardRef.current = false;
+      setGeneratingFlashcard(false);
     }, 500);
     return () => clearInterval(interval_id);
   }, [autoAiEnabled]);
@@ -101,6 +103,7 @@ export default function MainWindow() {
           back={flashBack}
           onFrontChange={setFlashFront}
           onBackChange={setFlashBack}
+          isLoading={generatingFlashcard}
         />
         {/* Controls area */}
         <ControlsBar borderTop={activePanel !== null} captureScreenEnabled={captureScreenEnabled} onToggleCapture={() => setCaptureScreenEnabled(v => !v)} autoAiEnabled={autoAiEnabled} onToggleAutoAi={() => setAutoAiEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />

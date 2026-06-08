@@ -1,7 +1,11 @@
 import { ipcMain, BrowserWindow, desktopCapturer, clipboard } from 'electron';
 import { createHash } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 import { prompts } from './prompts';
+
+const screenshotsDir = path.join(__dirname, '../../src/main/screenshots');
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -84,9 +88,12 @@ ipcMain.handle('message:post-message', async (_event, message: string, captureSc
   if (captureScreenEnabled) {
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1920, height: 1080 } });
     const thumbnail = sources[0].thumbnail;
-    const base64 = thumbnail.toDataURL().split(',')[1];
+    const png = thumbnail.toPNG();
+    const base64 = png.toString('base64');
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+    fs.writeFileSync(path.join(screenshotsDir, `${Date.now()}.png`), png);
+    console.log('Captured screen, saved to', screenshotsDir);
     currentParts.push({ inlineData: { mimeType: 'image/png', data: base64 } });
-    console.log('Captured screen and added to message parts');
   }
 
   const contents = [

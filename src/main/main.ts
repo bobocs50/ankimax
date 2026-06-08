@@ -23,6 +23,8 @@ function createFloatingHud() {
     }
   });
 
+  window.setContentProtection(true);
+
   // Position at top center of screen
   const display = screen.getPrimaryDisplay();
   const x = Math.round((display.bounds.width - 680) / 2);

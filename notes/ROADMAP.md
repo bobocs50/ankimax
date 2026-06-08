@@ -50,7 +50,7 @@ d
 ---
 
 ## Phase 4: AnkiConnect
-
+f
 **Goal:** Push a card to Anki from inside the app.
 
 - [ ] Check if Anki is running (ping AnkiConnect at `localhost:8765`)

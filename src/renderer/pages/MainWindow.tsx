@@ -81,6 +81,7 @@ export default function MainWindow() {
         setFlashFront(card.front);
         setFlashBack(card.back);
       }
+      await window.api.initClipboardBaseline();
       generatingFlashcardRef.current = false;
       setGeneratingFlashcard(false);
     }, 500);

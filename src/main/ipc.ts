@@ -76,7 +76,7 @@ ipcMain.handle('flashcard:generate-card', async () => {
   const bullets = Array.isArray(raw.back) && raw.back.length > 1
     ? raw.back
     : String(raw.back).split('•').filter(s => s.trim());
-  const card = { front: raw.front, back: bullets.map(b => `• ${b.trim()}`).join('\n') };
+  const card = { front: raw.front, back: `<ul>${bullets.map(b => `<li>${b.trim()}</li>`).join('')}</ul>` };
   console.log('Generated flashcard:', card);
   return card;
 });

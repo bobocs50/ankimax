@@ -26,22 +26,22 @@ One loop: capture → AI card → edit → push to Anki.
 - [x] Each chat open starts a new session (no `contents` array carried over)
 
 ---
-d
-## Phase 3: Flashcard Editor
+
+## Phase 3: Flashcard Editor ✅
 
 **Goal:** Wire up FlashcardWindow so a user can actually edit a card.
 
 - [x] Front field (text input)
 - [x] Back field (text input)
-- [ ] AI fills Front & Back from screenshot (AI ON)
-- [ ] Anki input field possibilities (bullet, list, etc.)
+- [x] AI fills Front & Back from screenshot (AI ON)
+- [x] Anki input field possibilities (bullet, list, etc.)
 
 ---
 
 ## Card Generation Style — MUST HAVE
 
 **Goal:** User defines how AI generates cards. Set once, applied to every AI card.
-d
+
 - [ ] User can define a custom card style template (e.g. Pareto method, short definition, example-based, color-coded, etc.)
 - [ ] AI uses this template when generating Front and Back
 - [ ] Template is set once and applies globally to all AI-generated cards
@@ -50,7 +50,7 @@ d
 ---
 
 ## Phase 4: AnkiConnect
-f
+
 **Goal:** Push a card to Anki from inside the app.
 
 - [ ] Check if Anki is running (ping AnkiConnect at `localhost:8765`)

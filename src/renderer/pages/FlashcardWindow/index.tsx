@@ -7,7 +7,6 @@ const FORMAT_BUTTONS = [
   { icon: Bold,          label: 'Bold',          cmd: 'bold' },
   { icon: Italic,        label: 'Italic',         cmd: 'italic' },
   { icon: Underline,     label: 'Underline',      cmd: 'underline' },
-  { icon: Strikethrough, label: 'Strikethrough',  cmd: 'strikeThrough' },
   null,
   { icon: List,          label: 'Bullet list',    cmd: 'insertUnorderedList' },
   { icon: ListOrdered,   label: 'Numbered list',  cmd: 'insertOrderedList' },
@@ -24,19 +23,30 @@ const COLORS = [
 ];
 
 function FormatToolbar() {
-  const [state, setState] = useState({ formats: new Set<string>(), color: '' });
+  const [formats, setFormats] = useState(new Set<string>());
+  const [currentColor, setCurrentColor] = useState('');
+  const currentColorRef = useRef('');
 
   const sync = () => {
-    const formats = new Set<string>();
+    const next = new Set<string>();
     for (const btn of FORMAT_BUTTONS) {
-      if (btn && document.queryCommandState(btn.cmd)) formats.add(btn.cmd);
+      if (btn && document.queryCommandState(btn.cmd)) next.add(btn.cmd);
     }
-    setState({ formats, color: document.queryCommandValue('foreColor') });
+    setFormats(next);
   };
 
   useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      if ((e.target as HTMLElement).contentEditable === 'true' && currentColorRef.current) {
+        document.execCommand('foreColor', false, currentColorRef.current);
+      }
+    };
     document.addEventListener('selectionchange', sync);
-    return () => document.removeEventListener('selectionchange', sync);
+    document.addEventListener('focusin', handleFocusIn);
+    return () => {
+      document.removeEventListener('selectionchange', sync);
+      document.removeEventListener('focusin', handleFocusIn);
+    };
   }, []);
 
   return (
@@ -45,7 +55,7 @@ function FormatToolbar() {
       {/* Format buttons */}
       {FORMAT_BUTTONS.map((btn, i) => {
         if (btn === null) return <div key={i} className="w-px h-4 bg-white/20 mx-1.5" />;
-        const active = state.formats.has(btn.cmd);
+        const active = formats.has(btn.cmd);
         return (
           <button
             key={btn.label}
@@ -64,13 +74,19 @@ function FormatToolbar() {
       {/* Color swatches */}
       <div className="w-px h-4 bg-white/20 mx-1.5" />
       {COLORS.map(color => {
-        const active = color === state.color;
+        const active = color === currentColor;
         return (
           <button
             key={color}
             type="button"
             aria-label={`Text color ${color}`}
-            onMouseDown={e => { e.preventDefault(); document.execCommand('foreColor', false, color); sync(); }}
+            onMouseDown={e => {
+              e.preventDefault();
+              setCurrentColor(color);
+              currentColorRef.current = color;
+              document.execCommand('foreColor', false, color);
+              sync();
+            }}
             className={`w-3.5 h-3.5 rounded-full mx-0.5 flex-shrink-0 transition-all duration-150 ${
               active ? 'ring-2 ring-white/80' : 'ring-1 ring-white/20 hover:ring-white/50'
             }`}
@@ -107,9 +123,10 @@ function CardField({ label, value, onChange, isLoading, skeletonBars }: CardFiel
   }, [isLoading]);
 
   useEffect(() => {
-    if (!ref.current || ref.current.innerHTML === value) return;
+    if (!ref.current || isLoading) return;
+    if (ref.current.innerHTML === value) return;
     ref.current.innerHTML = value;
-  }, [value]);
+  }, [value, isLoading]);
 
   const handleInput = () => {
     if (!ref.current) return;

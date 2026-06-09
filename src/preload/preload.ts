@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   initClipboardBaseline: () => ipcRenderer.invoke('flashcard:init-clipboard-baseline'),
   checkClipboard: () => ipcRenderer.invoke('flashcard:check-clipboard'),
   generateCard: () => ipcRenderer.invoke('flashcard:generate-card'),
+  sendAnki: (card: { front: string; back: string }) => ipcRenderer.invoke('flashcard:send-anki', card),
 
   //Window API
   expandWindow: () => ipcRenderer.invoke('window:expand'),

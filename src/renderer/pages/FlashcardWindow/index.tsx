@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, ArrowRight } from 'lucide-react';
 
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
@@ -27,10 +27,16 @@ const LABEL_CLASS = 'text-[10px] font-semibold uppercase tracking-widest text-wh
 const EDIT_CLASS = 'w-full bg-transparent px-4 pb-4 text-[13.5px] leading-relaxed text-white/90 focus:outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5';
 const SKELETON_CLASS = 'h-2 rounded-full bg-white/[0.08] animate-pulse';
 
-function FormatToolbar() {
+function FormatToolbar({ front, back, onFrontChange, onBackChange }: { front: string; back: string; onFrontChange: (v: string) => void; onBackChange: (v: string) => void }) {
   const [formats, setFormats] = useState(new Set<string>());
   const [currentColor, setCurrentColor] = useState('');
   const currentColorRef = useRef('');
+
+  const handleSendCard = () => {
+    window.api.sendAnki({ front, back });
+    onFrontChange('');
+    onBackChange('');
+  };
 
   const sync = () => {
     const next = new Set<string>();
@@ -88,6 +94,15 @@ function FormatToolbar() {
           style={{ background: color }}
         />
       ))}
+      <button
+        type="button"
+        aria-label="Add Card"
+        onClick={handleSendCard}
+        className="ml-auto flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1 text-[12px] font-medium text-white/70 transition-all duration-150 hover:bg-white/20 hover:text-white/90"
+      >
+        <ArrowRight size={12} strokeWidth={2} />
+        Add Card
+      </button>
     </div>
   );
 }
@@ -111,25 +126,27 @@ export default function FlashcardWindow({
   const backRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    frontRef.current!.innerHTML = front;
+    if (!frontRef.current) return;
+    frontRef.current.innerHTML = front;
     backRef.current!.innerHTML = back;
   }, []);
 
   useEffect(() => {
+    if (!frontRef.current) return;
     if (isLoading) {
-      frontRef.current!.innerHTML = '';
+      frontRef.current.innerHTML = '';
       backRef.current!.innerHTML = '';
     }
   }, [isLoading]);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (frontRef.current!.innerHTML !== front) frontRef.current!.innerHTML = front;
+    if (!frontRef.current || isLoading) return;
+    if (frontRef.current.innerHTML !== front) frontRef.current.innerHTML = front;
   }, [front, isLoading]);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (backRef.current!.innerHTML !== back) backRef.current!.innerHTML = back;
+    if (!backRef.current || isLoading) return;
+    if (backRef.current.innerHTML !== back) backRef.current.innerHTML = back;
   }, [back, isLoading]);
 
   if (!expanded) return null;
@@ -137,7 +154,7 @@ export default function FlashcardWindow({
   return (
     <div className="interactive flex-1 overflow-y-auto backdrop-blur-2xl" style={{ background: GLASS_DARK }}>
 
-      <FormatToolbar />
+      <FormatToolbar front={front} back={back} onFrontChange={onFrontChange} onBackChange={onBackChange} />
 
       {/* Front */}
       <div className={FIELD_CLASS}>

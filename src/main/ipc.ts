@@ -116,6 +116,21 @@ ipcMain.handle('message:post-message', async (_event, message: string, captureSc
   return data.candidates![0].content.parts[0].text;
 });
 
+// Logs the flashcard front/back to the console (Anki integration pending)
+
+ipcMain.handle('flashcard:send-anki', (_event, card: { front: string; back: string }) => {
+  console.log('Send to Anki:', card);
+
+
+
+
+
+
+
+
+  
+});
+
 // Expands the window to show the chat panel
 
 ipcMain.handle('window:expand', (event) => {

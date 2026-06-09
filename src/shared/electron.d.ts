@@ -8,6 +8,7 @@ declare global {
       initClipboardBaseline: () => Promise<void>;
       checkClipboard: () => Promise<boolean>;
       generateCard: () => Promise<{ front: string; back: string } | undefined>;
+      sendAnki: (card: { front: string; back: string }) => Promise<void>;
       expandWindow: () => Promise<void>;
       collapseWindow: () => Promise<void>;
     };

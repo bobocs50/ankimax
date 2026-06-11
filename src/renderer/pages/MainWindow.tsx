@@ -1,4 +1,4 @@
-import { Settings, Sparkles, Eye, Paperclip, BookPlus, FolderCog, ChevronDown } from 'lucide-react';
+import { Settings, Sparkles, Eye, BookPlus, ChevronDown } from 'lucide-react';
 import { IconButton } from '@/components/IconButton';
 import { useState, useEffect, useRef } from 'react';
 import ChatWindow from './ChatWindow';
@@ -6,7 +6,18 @@ import FlashcardWindow from './FlashcardWindow';
 
 const GLASS_DARK = 'rgba(12, 12, 12, 0.95)';
 
-function ControlsBar({ borderTop = false, captureScreenEnabled, onToggleCapture, autoAiEnabled, onToggleAutoAi, onOpenFlashcard }: { borderTop?: boolean; captureScreenEnabled: boolean; onToggleCapture: () => void; autoAiEnabled: boolean; onToggleAutoAi: () => void; onOpenFlashcard: () => void }) {
+type ControlsBarProps = {
+  borderTop?: boolean;
+  captureScreenEnabled: boolean;
+  onToggleCapture: () => void;
+  autoAiEnabled: boolean;
+  onToggleAutoAi: () => void;
+  onOpenFlashcard: () => void;
+  decks: string[];
+  selectedDeck: string;
+};
+
+function ControlsBar({ borderTop = false, captureScreenEnabled, onToggleCapture, autoAiEnabled, onToggleAutoAi, onOpenFlashcard, decks, selectedDeck }: ControlsBarProps) {
   return (
     <div
       className={`flex items-center px-5 py-2.5 backdrop-blur-2xl ${borderTop ? 'border-t border-white/10' : ''}`}
@@ -20,17 +31,17 @@ function ControlsBar({ borderTop = false, captureScreenEnabled, onToggleCapture,
         <IconButton icon={BookPlus} label="Create Flashcard" onClick={onOpenFlashcard} />
         <IconButton icon={Sparkles} label="Auto AI" active={autoAiEnabled} onClick={onToggleAutoAi} />
         <IconButton icon={Eye} label="Capture Screen" active={captureScreenEnabled} onClick={onToggleCapture} />
-        <div className="h-4 w-px bg-white/20" />
-        <IconButton icon={FolderCog} label="Anki Deck" />
       </div>
 
+      {/* Deck selector */}
       <div className="flex w-20 justify-end">
         <button
           type="button"
+          aria-label="Select Anki deck"
+          onClick={() => window.api.showDeckMenu(decks, selectedDeck)}
           className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[13px] text-white/60 transition-colors hover:bg-white/25"
-          aria-label="History"
         >
-          History
+          {selectedDeck}
           <ChevronDown className="size-4" />
         </button>
       </div>
@@ -44,6 +55,15 @@ export default function MainWindow() {
   const [autoAiEnabled, setAutoAiEnabled] = useState(false);
   const [flashFront, setFlashFront] = useState('');
   const [flashBack, setFlashBack] = useState('');
+  const [decks, setDecks] = useState<string[]>(['Default']);
+  const [selectedDeck, setSelectedDeck] = useState('Default');
+
+  useEffect(() => {
+    window.api.getDecks()
+      .then(fetched => { setDecks(fetched); setSelectedDeck(fetched[0]); })
+      .catch(() => {});
+    window.api.onDeckSelected(deck => setSelectedDeck(deck));
+  }, []);
 
   const handleOpenChat = () => {
     setActivePanel('chat');
@@ -67,7 +87,7 @@ export default function MainWindow() {
     if (!autoAiEnabled) return;
     window.api.initClipboardBaseline();
 
-    const interval_id = setInterval(async () => {
+    const intervalId = setInterval(async () => {
       if (generatingFlashcardRef.current) return;
       const changed = await window.api.checkClipboard();
       if (!changed) return;
@@ -85,7 +105,7 @@ export default function MainWindow() {
       generatingFlashcardRef.current = false;
       setGeneratingFlashcard(false);
     }, 500);
-    return () => clearInterval(interval_id);
+    return () => clearInterval(intervalId);
   }, [autoAiEnabled]);
 
   return (
@@ -105,9 +125,19 @@ export default function MainWindow() {
           onFrontChange={setFlashFront}
           onBackChange={setFlashBack}
           isLoading={generatingFlashcard}
+          selectedDeck={selectedDeck}
         />
         {/* Controls area */}
-        <ControlsBar borderTop={activePanel !== null} captureScreenEnabled={captureScreenEnabled} onToggleCapture={() => setCaptureScreenEnabled(v => !v)} autoAiEnabled={autoAiEnabled} onToggleAutoAi={() => setAutoAiEnabled(v => !v)} onOpenFlashcard={handleOpenFlashcard} />
+        <ControlsBar
+          borderTop={activePanel !== null}
+          captureScreenEnabled={captureScreenEnabled}
+          onToggleCapture={() => setCaptureScreenEnabled(v => !v)}
+          autoAiEnabled={autoAiEnabled}
+          onToggleAutoAi={() => setAutoAiEnabled(v => !v)}
+          onOpenFlashcard={handleOpenFlashcard}
+          decks={decks}
+          selectedDeck={selectedDeck}
+        />
       </div>
     </main>
   );

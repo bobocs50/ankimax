@@ -1,6 +1,6 @@
-import { register as registerFlashcard } from './ipc/flashcard';
-import { register as registerMessage } from './ipc/message';
-import { register as registerWindow } from './ipc/window';
+import { register as registerFlashcard } from './ipc_routes/flashcard';
+import { register as registerMessage } from './ipc_routes/message';
+import { register as registerWindow } from './ipc_routes/window';
 
 registerFlashcard();
 registerMessage();

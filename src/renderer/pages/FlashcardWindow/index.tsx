@@ -27,13 +27,13 @@ const LABEL_CLASS = 'text-[10px] font-semibold uppercase tracking-widest text-wh
 const EDIT_CLASS = 'w-full bg-transparent px-4 pb-4 text-[13.5px] leading-relaxed text-white/90 focus:outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5';
 const SKELETON_CLASS = 'h-2 rounded-full bg-white/[0.08] animate-pulse';
 
-function FormatToolbar({ front, back, onFrontChange, onBackChange }: { front: string; back: string; onFrontChange: (v: string) => void; onBackChange: (v: string) => void }) {
+function FormatToolbar({ front, back, onFrontChange, onBackChange, selectedDeck }: { front: string; back: string; onFrontChange: (v: string) => void; onBackChange: (v: string) => void; selectedDeck: string }) {
   const [formats, setFormats] = useState(new Set<string>());
   const [currentColor, setCurrentColor] = useState('');
   const currentColorRef = useRef('');
 
   const handleSendCard = () => {
-    window.api.sendAnki({ front, back });
+    window.api.sendAnki({ front, back, deckName: selectedDeck });
     onFrontChange('');
     onBackChange('');
   };
@@ -114,6 +114,7 @@ export default function FlashcardWindow({
   onFrontChange,
   onBackChange,
   isLoading = false,
+  selectedDeck,
 }: {
   expanded: boolean;
   front: string;
@@ -121,6 +122,7 @@ export default function FlashcardWindow({
   onFrontChange: (v: string) => void;
   onBackChange: (v: string) => void;
   isLoading?: boolean;
+  selectedDeck: string;
 }) {
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
@@ -154,7 +156,7 @@ export default function FlashcardWindow({
   return (
     <div className="interactive flex-1 overflow-y-auto backdrop-blur-2xl" style={{ background: GLASS_DARK }}>
 
-      <FormatToolbar front={front} back={back} onFrontChange={onFrontChange} onBackChange={onBackChange} />
+      <FormatToolbar front={front} back={back} onFrontChange={onFrontChange} onBackChange={onBackChange} selectedDeck={selectedDeck} />
 
       {/* Front */}
       <div className={FIELD_CLASS}>

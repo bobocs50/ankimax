@@ -77,8 +77,41 @@ export function register() {
     return card;
   });
 
-  // Logs the flashcard front/back to the console (Anki integration pending)
-  ipcMain.handle('flashcard:send-anki', (_event, card: { front: string; back: string }) => {
-    console.log('Send to Anki:', card);
+  // Returns all deck names from Anki via AnkiConnect
+  ipcMain.handle('flashcard:get-decks', async () => {
+    const res = await fetch('http://localhost:8765', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deckNames', version: 6 }),
+    });
+    const data = await res.json() as { result: string[] | null; error: string | null };
+    if (data.error) throw new Error(data.error);
+    return data.result;
+  });
+
+  // Sends the flashcard to Anki via AnkiConnect (must be running on port 8765)
+  ipcMain.handle('flashcard:send-anki', async (_event, card: { front: string; back: string; deckName: string }) => {
+    const res = await fetch('http://localhost:8765', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'addNote',
+        version: 6,
+        params: {
+          note: {
+            deckName: card.deckName,
+            modelName: 'Basic',
+            fields: { Front: card.front, Back: card.back },
+            options: { allowDuplicate: false },
+            tags: [],
+          },
+        },
+      }),
+    });
+
+    const data = await res.json() as { result: number | null; error: string | null };
+    if (data.error) throw new Error(data.error);
+    console.log('Added to Anki, note id:', data.result);
+    return data.result;
   });
 }

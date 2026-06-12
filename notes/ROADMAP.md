@@ -54,9 +54,9 @@ One loop: capture → AI card → edit → push to Anki.
 **Goal:** Push a card to Anki from inside the app.
 
 - [ ] Check if Anki is running (ping AnkiConnect at `localhost:8765`)
-- [ ] Fetch deck list from Anki
-- [ ] Deck picker in FlashcardWindow footer
-- [ ] "Add to Anki" button — POST card to selected deck
+- [x] Fetch deck list from Anki
+- [x] Deck picker in FlashcardWindow footer
+- [x] "Add to Anki" button — POST card to selected deck
 - [ ] Success: close editor, show brief confirmation
 - [ ] Failure: show error, keep editor open
 

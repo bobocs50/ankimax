@@ -26,7 +26,7 @@ There are no tests in this project.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` (or create `.env`) with:
+Copy `.env.example` to `.env` with:
 
 ```
 GEMINI_API_KEY=...
@@ -34,109 +34,114 @@ GEMINI_MODEL=gemini-2.0-flash
 SYSTEM_PROMPT=...
 ```
 
-The main process reads these via `dotenv` in `src/main/ipc.ts` before making Gemini API calls.
-
 ## Architecture
 
-Ankimax is an Electron desktop app for capturing screen content and creating Anki flashcards. It uses the standard Electron process split with strict security boundaries.
+Ankimax is a frameless, always-on-top Electron HUD (680×125px, top center of screen) for capturing screen content and creating Anki flashcards. It expands to 680×500 when a panel is open.
 
 ### Process Boundaries
 
 ```
 src/
-├── main/           # Electron main process (Node.js)
-├── preload/        # Bridge script exposing window.api
-├── renderer/       # React app (browser context, no Node access)
-└── shared/         # TypeScript types shared across processes
+├── main/               # Electron main process (Node.js)
+│   ├── main.ts         # BrowserWindow creation, app lifecycle
+│   ├── ipc.ts          # Orchestrator — imports and calls all register() functions
+│   ├── ipc_routes/     # IPC handlers split by namespace
+│   │   ├── flashcard.ts  # flashcard:* handlers + AnkiConnect + Gemini card generation
+│   │   ├── message.ts    # message:* handlers + Gemini chat
+│   │   └── window.ts     # window:* handlers (resize, native deck menu)
+│   └── prompts.ts      # Gemini system prompts for chat and flashcard generation
+├── preload/
+│   └── preload.ts      # contextBridge — exposes window.api to renderer
+├── renderer/           # React + Tailwind app (Vite, no Node access)
+│   └── pages/
+│       ├── MainWindow.tsx      # Root: panel state, deck state, AutoAI polling
+│       ├── ChatWindow/         # Chat panel with simulated streaming
+│       └── FlashcardWindow/    # Flashcard editor with rich text toolbar
+└── shared/
+    └── electron.d.ts   # window.api type declarations
 ```
-
-**Main process** (`src/main/`): Creates BrowserWindow, registers IPC handlers in `ipc.ts`. Compiled to `dist-electron/` via `tsconfig.electron.json`.
-
-**Preload** (`src/preload/preload.ts`): Exposes a narrow API on `window.api` using contextBridge. This is the only bridge between renderer and Electron capabilities.
-
-**Renderer** (`src/renderer/`): React + Tailwind app served by Vite. Uses `@/` path alias (maps to `src/renderer/`). No direct Node/Electron imports allowed.
-
-**Shared types** (`src/shared/electron.d.ts`): Declares the `window.api` interface for type safety in the renderer.
 
 ### Current `window.api` surface
 
 ```ts
+// App
 getVersion(): Promise<string>
-postMessage(message, captureEnabled, history): Promise<string>
-getCards(): Promise<void>
+
+// Chat
+postMessage(message, captureScreenEnabled, history): Promise<string>
+
+// Flashcard / AnkiConnect
+getDecks(): Promise<string[]>
+sendAnki(card: { front, back, deckName }): Promise<void>
+initClipboardBaseline(): Promise<void>
+checkClipboard(): Promise<boolean>
+generateCard(): Promise<{ front: string; back: string } | undefined>
+
+// Window
 expandWindow(): Promise<void>
 collapseWindow(): Promise<void>
+showDeckMenu(decks, selectedDeck): Promise<void>   // opens native OS context menu
+onDeckSelected(cb): void                            // main→renderer push event
 ```
 
-### IPC Handler Comments
-
-Every `ipcMain.handle` in `src/main/ipc.ts` must have a one-line comment directly above it describing what it does. Keep it short — one sentence, no period needed.
+`onDeckSelected` is the only main→renderer push (`webContents.send` / `ipcRenderer.on`). All others are request/response (`ipcMain.handle` / `ipcRenderer.invoke`).
 
 ### Adding New Desktop Capabilities
 
-Follow the existing `getVersion` pattern:
-1. Add IPC handler in `src/main/ipc.ts`
-2. Expose method in `src/preload/preload.ts` via `contextBridge`
+1. Add handler in the appropriate `src/main/ipc_routes/*.ts` file (or create a new one and register it in `ipc.ts`)
+2. Expose in `src/preload/preload.ts` via `contextBridge`
 3. Add type to `src/shared/electron.d.ts`
 4. Call from renderer via `window.api.methodName()`
 
-IPC channel names follow the `namespace:action` pattern (e.g. `app:get-version`, `window:expand`, `flashcard:get-cards`).
+IPC channel names follow `namespace:action` (e.g. `flashcard:get-decks`, `window:expand`).
+
+Every `ipcMain.handle` must have a one-line comment above it. Short, no period.
 
 ### Gemini API
 
-Calls are made with raw `fetch` in `src/main/ipc.ts` — no SDK. Multi-turn history is passed manually as a `contents` array. Screen capture attaches a base64 PNG via `inlineData` in the message parts.
+Raw `fetch`, no SDK. Chat uses multi-turn `contents` array with optional base64 PNG screenshot attached via `inlineData`. Flashcard generation uses `responseMimeType: 'application/json'` with a `responseSchema`. Both system prompts live in `src/main/prompts.ts`. Prompts and responses are in German.
+
+### AnkiConnect
+
+Anki must be running with the AnkiConnect plugin on `localhost:8765`. All calls are POST with `{ action, version: 6, params }`. Used actions: `deckNames`, `addNote`.
 
 ### Security Model
 
-- `contextIsolation: true` and `nodeIntegration: false`
-- Renderer accesses main process only through explicit preload APIs
-- Keep IPC surface minimal and explicit
+`contextIsolation: true`, `nodeIntegration: false`. Renderer touches Node/Electron only through explicit preload APIs.
 
 ### Two TypeScript Configs
 
-- `tsconfig.json` - Renderer (ESNext modules, JSX, path aliases, no emit)
-- `tsconfig.electron.json` - Main/preload (CommonJS, emits to `dist-electron/`)
+- `tsconfig.json` — Renderer (ESNext, JSX, `@/` alias → `src/renderer/`, no emit)
+- `tsconfig.electron.json` — Main/preload (CommonJS, emits to `dist-electron/`)
 
-### Window Characteristics
-
-The app is a frameless, transparent, always-on-top floating HUD (680×125px) positioned at the top center of the primary display. It expands to 680×500 when the chat panel is open. This is a deliberate UX constraint — don't change it without reason.
+Run both to fully type-check: `npx tsc --noEmit -p tsconfig.json && npx tsc --noEmit -p tsconfig.electron.json`
 
 ### CSS Drag Region
 
-`global.css` defines drag behavior for the frameless window:
-- `.draggable-area` — makes a region draggable (`-webkit-app-region: drag`)
-- `.interactive` — opts out of drag on a child element (used on scrollable/clickable areas inside the drag region)
+- `.draggable-area` — draggable region (`-webkit-app-region: drag`)
+- `.interactive` — opts out of drag (used on scrollable/clickable areas inside drag regions)
 - `button`, `input`, `select`, `textarea` are automatically non-draggable
 
-The `liquid-glass` and `liquid-glass-dark` utility classes provide the frosted glass material; `liquid-glass-bar` is a fixed 32px tall variant.
-
-### Wired vs Stub Features
+### Feature Status
 
 Fully wired:
-- **Auto AI** (Sparkles) — toggles a 1s polling interval that calls `getCards()`, which reads the clipboard image in the main process
-- **Capture Screen** (Eye) — attaches a desktop screenshot (base64 PNG) to the next `postMessage` call
-- **Create Flashcard** (BookPlus) — opens `FlashcardWindow` with front/back `CardField` text areas
+- **Auto AI** (Sparkles) — polls clipboard every 500ms; on new image, calls Gemini to generate a flashcard and opens FlashcardWindow
+- **Capture Screen** (Eye) — attaches desktop screenshot to next chat message
+- **Create Flashcard** (BookPlus) — opens FlashcardWindow with rich text editor
+- **Deck selector** — native OS context menu populated from AnkiConnect; selected deck passed to `sendAnki`
+- **Send to Anki** — posts front/back HTML + deckName to AnkiConnect `addNote`
 
-Stubs (buttons exist but no functionality):
+Stubs (UI exists, no functionality):
 - **Settings** — no panel
-- **Anki Deck** (FolderCog) — no state or action
-- **History** button — no panel
-- **FlashcardWindow fields** — front/back text entry works, but saving to Anki is not yet implemented
-
-Response streaming in `ChatWindow` is simulated client-side: the full API response arrives at once, then words are appended at 50ms intervals.
+- **ChatWindow** response streaming — simulated client-side (words appended at 50ms intervals; full response already received)
 
 ### Installed but lightly used
 
-`radix-ui`, `shadcn`, `clsx`, `tailwind-merge`, and CSS custom properties (shadcn design tokens) are installed and configured but not yet used in components. Available when building new UI.
-
-### Development vs Production
-
-- Dev: Renderer at `http://localhost:5173`, DevTools open
-- Prod: Loads from `dist/index.html`, compiled Electron in `dist-electron/`
+`radix-ui`, `shadcn`, `clsx`, `tailwind-merge` are installed and configured but not yet used in components.
 
 ## General Philosophy
 
-- Simple code that works. Don't over-engineer — prefer the straightforward solution over the clever one.
+Simple code that works. Don't over-engineer — prefer the straightforward solution over the clever one.
 
 ## React Code Style
 
